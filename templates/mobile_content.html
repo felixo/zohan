@@ -1,0 +1,33 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <style>
+        *, body {
+            font-family: Arial;
+            line-height: 1.4em;
+        }
+    </style>
+</head>
+<body>
+<h3>{{ today|date:"d.m.Y" }}</h3>
+{% for record in records %}
+<div style="margin-bottom: 2em">
+    <b>{{ record.start|time:"H:i" }} - {{ record.end|time:"H:i" }} {{ record.name }}</b><br/>
+    {{ record.address }}<br />
+    {% if record.catering %}
+    Выезд на м.{{ record.metro }}<br />
+    {% endif %}
+    {{ record.man_haircut|yesno:"Мужская стрижка;, " }}
+    {{ record.woman_haircut|yesno:"Женская стрижка;, " }}
+    {{ record.coloring|yesno:"Окрашивание;, " }}
+    {{ record.haircare|yesno:"Уход;, " }}
+    {{ record.laminate|yesno:"Ламинирование;, " }}
+    {% if record.comment %}
+        <b>Комментарий:</b> {{ record.comment }}<br/>
+    {% endif %}
+</div>
+{% endfor %}
+
+</body>
+</html>

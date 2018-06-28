@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load forms %}
+
+{% block content %}
+<h1>{{ greetings }}</h1>
+	<div id='calendar'></div>
+	<div id="event_edit_container">
+		<form method="POST" action="/record/save/">
+			<ul>
+			    <li>{% show_field form.name %}</li>
+                <li><label>и я хочу записаться на</label></li>
+                <li>{% show_field form.man_haircut %}</li>
+                <li>{% show_field form.woman_haircut %}</li>
+                <li>{% show_field form.coloring %}</li>
+                <li>{% show_field form.haircare %}</li>
+                <li>{% show_field form.laminate %}</li>
+                <hr />
+                <li>{% show_field form.catering %}</li>
+                <li style="display: none" class="metro">{% show_field form.metro %}</li>
+                <li>{% show_field form.email %}</li>
+                <li>{% show_field form.address %}</li>
+                <li><div id="temporal-warning"></div></li>
+                {% show_field form.start %}
+                {% show_field form.end %}
+            </ul>
+		</form>
+	</div>
+{% endblock %}
