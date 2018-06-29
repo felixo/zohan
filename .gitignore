@@ -1,3 +1,7 @@
 *pyc
 *pyo
 settings_local.py
+.idea*
+static/
+settings.py
+record/migrations/*

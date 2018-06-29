@@ -27,3 +27,7 @@ def get_mobile_content(request):
         'records': records,
         'today': datetime.date.today()
     }
+
+@render_to('yandex_d24aa8e1eb7bf7be.html')
+def yandex_content(request):
+    return  {}
