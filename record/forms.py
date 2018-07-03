@@ -10,6 +10,7 @@ from metro import METRO_CHOICES
 
 
 def send_email(address, name, start, end):
+    print address, name, start, end
     import smtplib
     from email.MIMEMultipart import MIMEMultipart
     from email.MIMEBase import MIMEBase
@@ -21,9 +22,10 @@ def send_email(address, name, start, end):
     CRLF = "\r\n"
     login = "calendar@deemaz.ru"
     password = "LeninaL14"
-    attendees = ["calendar@deemaz.ru", address]
+    attendees = [address]
     organizer = "ORGANIZER;CN=Deemaz:mailto:calendar@deemaz.ru"
     fro = "Deemaz <calendar@deemaz.ru>"
+    deemaz = 'calendar@deemaz.ru'
 
     ddtstart = start
     dur = end - start
@@ -35,6 +37,7 @@ def send_email(address, name, start, end):
     dtend = str(dtend.strftime("%Y%m%dT%H%M%S+0300"))
 
     description = u"DESCRIPTION: Стрижка (" + name + ") " + dtstartx + CRLF
+    description_deemaz = u"DESCRIPTION: Стрижка (" + name + ")" + CRLF
     attendee = ""
     for att in attendees:
         attendee += "ATTENDEE;UTYPE=INDIVIDUAL;ROLE=REQ-    PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE"+CRLF+" ;CN="+att+";X-NUM-GUESTS=0:"+CRLF+" mailto:"+att+CRLF
@@ -44,31 +47,55 @@ def send_email(address, name, start, end):
     ical+= attendee+"CREATED:"+dtstamp+CRLF+description+"LAST-MODIFIED:"+dtstamp+CRLF+"LOCATION:"+CRLF+"SEQUENCE:0"+CRLF+"STATUS:CONFIRMED"+CRLF
     ical+= u"SUMMARY:Стрижка "+dtstartx+CRLF+"TRANSP:OPAQUE"+CRLF+"END:VEVENT"+CRLF+"END:VCALENDAR"+CRLF
 
-    eml_body = eml_body_bin = u"Приглашение на стрижку: " + name + ", " + dtstartx
+    ical_deemaz = "BEGIN:VCALENDAR" + CRLF + "PRODID:pyICSParser" + CRLF + "VERSION:2.0" + CRLF + "CALSCALE:GREGORIAN" + CRLF
+    ical_deemaz += "METHOD:REQUEST" + CRLF + "BEGIN:VEVENT" + CRLF + "DTSTART:" + dtstart + CRLF + "DTEND:" + dtend + CRLF + "DTSTAMP:" + dtstamp + CRLF + organizer + CRLF
+    ical_deemaz += "UID:UUUUU" + dtstamp + CRLF
+    ical_deemaz += attendee + "CREATED:" + dtstamp + CRLF + description_deemaz + "LAST-MODIFIED:" + dtstamp + CRLF + "LOCATION:" + CRLF + "SEQUENCE:0" + CRLF + "STATUS:CONFIRMED" + CRLF
+    ical_deemaz += u"SUMMARY:Стрижка " + name + CRLF + "TRANSP:OPAQUE" + CRLF + "END:VEVENT" + CRLF + "END:VCALENDAR" + CRLF
+
+    eml_body = u"Приглашение на стрижку: " + name + ", " + dtstartx
+    eml_body_deemaz = u"Информация о стрижке: " + name
     msg = MIMEMultipart('mixed')
+    msg_deemaz = MIMEMultipart('mixed')
     msg['Reply-To']=fro
+    msg_deemaz['Reply-To']=fro
     msg['Date'] = formatdate(localtime=True)
+    msg_deemaz['Date'] = formatdate(localtime=True)
     msg['Subject'] = (u"Стрижка (" + name + u") — " + dtstartx).encode('utf-8')
+    msg_deemaz['Subject'] = (u"Стрижка (" + name + u")").encode('utf-8')
     msg['From'] = fro
+    msg_deemaz['From'] = fro
     msg['To'] = ",".join(attendees)
+    msg_deemaz['To'] = ",".join([deemaz])
 
     part_email = MIMEText(eml_body.encode('utf-8'), "html", "utf-8")
+    part_email_deemaz = MIMEText(eml_body_deemaz.encode('utf-8'), "html", "utf-8")
     part_cal = MIMEText(ical,'calendar;method=REQUEST', "utf-8")
+    part_cal_deemaz = MIMEText(ical_deemaz, 'calendar;method=REQUEST', "utf-8")
 
     msgAlternative = MIMEMultipart('alternative')
+    msgAlternativeD = MIMEMultipart('alternative')
     msg.attach(msgAlternative)
+    msg_deemaz.attach(msgAlternativeD)
 
     ical_atch = MIMEBase('application/ics',' ;name="%s"'%("invite.ics"))
+    ical_atch_deemaz = MIMEBase('application/ics', ' ;name="%s"' % ("invite.ics"))
     ical_atch.set_payload(ical.encode('utf-8'))
+    ical_atch_deemaz.set_payload(ical.encode('utf-8'))
     Encoders.encode_base64(ical_atch)
+    Encoders.encode_base64(ical_atch_deemaz)
     ical_atch.add_header('Content-Disposition', 'attachment; filename="%s"'%("invite.ics"))
+    ical_atch_deemaz.add_header('Content-Disposition', 'attachment; filename="%s"' % ("invite.ics"))
 
     eml_atch = MIMEBase('text/plain','')
     Encoders.encode_base64(eml_atch)
     eml_atch.add_header('Content-Transfer-Encoding', "")
 
     msgAlternative.attach(part_email)
+    msgAlternativeD.attach(part_email_deemaz)
+
     msgAlternative.attach(part_cal)
+    msgAlternativeD.attach(part_cal_deemaz)
 
     mailServer = smtplib.SMTP('smtp.locum.ru', 25)
     mailServer.ehlo()
@@ -76,6 +103,7 @@ def send_email(address, name, start, end):
     mailServer.ehlo()
     mailServer.login(login, password)
     mailServer.sendmail(fro, attendees, msg.as_string())
+    mailServer.sendmail(fro, [deemaz], msg_deemaz.as_string())
     mailServer.close()
 
 
