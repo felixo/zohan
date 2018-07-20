@@ -9,8 +9,7 @@ from models import Record
 from metro import METRO_CHOICES
 
 
-def send_email(address, name, start, end):
-    print address, name, start, end
+def send_email(address, name, start, end, service):
     import smtplib
     from email.MIMEMultipart import MIMEMultipart
     from email.MIMEBase import MIMEBase
@@ -36,8 +35,8 @@ def send_email(address, name, start, end):
     dtstartx = str(ddtstart.strftime("%Y-%m-%d %H:%M"))
     dtend = str(dtend.strftime("%Y%m%dT%H%M%S+0300"))
 
-    description = u"DESCRIPTION: Стрижка (" + name + ") " + dtstartx + CRLF
-    description_deemaz = u"DESCRIPTION: Стрижка (" + name + ")" + CRLF
+    description = u"DESCRIPTION: Deemaz" + service + CRLF
+    description_deemaz = u"DESCRIPTION:" + name + u" " + service + CRLF
     attendee = ""
     for att in attendees:
         attendee += "ATTENDEE;UTYPE=INDIVIDUAL;ROLE=REQ-    PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE"+CRLF+" ;CN="+att+";X-NUM-GUESTS=0:"+CRLF+" mailto:"+att+CRLF
@@ -45,24 +44,24 @@ def send_email(address, name, start, end):
     ical+="METHOD:REQUEST"+CRLF+"BEGIN:VEVENT"+CRLF+"DTSTART:"+dtstart+CRLF+"DTEND:"+dtend+CRLF+"DTSTAMP:"+dtstamp+CRLF+organizer+CRLF
     ical+= "UID:UUUUU"+dtstamp+CRLF
     ical+= attendee+"CREATED:"+dtstamp+CRLF+description+"LAST-MODIFIED:"+dtstamp+CRLF+"LOCATION:"+CRLF+"SEQUENCE:0"+CRLF+"STATUS:CONFIRMED"+CRLF
-    ical+= u"SUMMARY:Стрижка "+dtstartx+CRLF+"TRANSP:OPAQUE"+CRLF+"END:VEVENT"+CRLF+"END:VCALENDAR"+CRLF
+    ical+= u"SUMMARY:Deemaz "+service+CRLF+"TRANSP:OPAQUE"+CRLF+"END:VEVENT"+CRLF+"END:VCALENDAR"+CRLF
 
     ical_deemaz = "BEGIN:VCALENDAR" + CRLF + "PRODID:pyICSParser" + CRLF + "VERSION:2.0" + CRLF + "CALSCALE:GREGORIAN" + CRLF
     ical_deemaz += "METHOD:REQUEST" + CRLF + "BEGIN:VEVENT" + CRLF + "DTSTART:" + dtstart + CRLF + "DTEND:" + dtend + CRLF + "DTSTAMP:" + dtstamp + CRLF + organizer + CRLF
     ical_deemaz += "UID:UUUUU" + dtstamp + CRLF
     ical_deemaz += attendee + "CREATED:" + dtstamp + CRLF + description_deemaz + "LAST-MODIFIED:" + dtstamp + CRLF + "LOCATION:" + CRLF + "SEQUENCE:0" + CRLF + "STATUS:CONFIRMED" + CRLF
-    ical_deemaz += u"SUMMARY:Стрижка " + name + CRLF + "TRANSP:OPAQUE" + CRLF + "END:VEVENT" + CRLF + "END:VCALENDAR" + CRLF
+    ical_deemaz += u"SUMMARY:" + name + u" " + service + CRLF + "TRANSP:OPAQUE" + CRLF + "END:VEVENT" + CRLF + "END:VCALENDAR" + CRLF
 
     eml_body = u"Приглашение на стрижку: " + name + ", " + dtstartx
-    eml_body_deemaz = u"Информация о стрижке: " + name
+    eml_body_deemaz = u"Информация о стрижке: " + name + u" " + service
     msg = MIMEMultipart('mixed')
     msg_deemaz = MIMEMultipart('mixed')
     msg['Reply-To']=fro
     msg_deemaz['Reply-To']=fro
     msg['Date'] = formatdate(localtime=True)
     msg_deemaz['Date'] = formatdate(localtime=True)
-    msg['Subject'] = (u"Стрижка (" + name + u") — " + dtstartx).encode('utf-8')
-    msg_deemaz['Subject'] = (u"Стрижка (" + name + u")").encode('utf-8')
+    msg['Subject'] = (service + u" " + dtstartx).encode('utf-8')
+    msg_deemaz['Subject'] = (name + u" " + service).encode('utf-8')
     msg['From'] = fro
     msg_deemaz['From'] = fro
     msg['To'] = ",".join(attendees)
@@ -168,8 +167,23 @@ class RecordForm(forms.ModelForm):
     def save(self, *args, **kwargs):
         record = super(RecordForm, self).save(commit=False, *args, **kwargs)
         record.updateTime()
+        service = []
+        if record.man_haircut:
+            print record
+            service.append(u'Мужская стрижка')
+        if record.woman_haircut:
+            service.append(u'Женская стрижка')
+        if record.coloring:
+            service.append(u'Окрашивание')
+        if record.haircare:
+            service.append(u'Уход')
+        if record.laminate:
+            service.append(u'Ламинирование')
+        if record.catering:
+            service.append(u'Выезд')
+        calendar_service = u'+'.join(service)
         try:
-            send_email(record.email, record.name, record.start, record.end)
+            send_email(record.email, record.name, record.start, record.end, calendar_service)
         except:
             import traceback
             open('/tmp/axz', 'a').write(traceback.format_exc() + '\n\n\n')
