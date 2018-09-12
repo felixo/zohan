@@ -9,5 +9,5 @@ urlpatterns = patterns('',
     (r'^delete/$', views.delete),
     (r'^get_day_status/$', views.get_day_status),
     (r'^set_day_status/$', views.set_day_status),
-
+    (r'^resize/(?P<id>\d+)/$', views.resize),
 )

@@ -3,6 +3,7 @@ import datetime
 
 from django.core.exceptions import ValidationError
 from django.core.validators import email_re
+from settings_local import DEBUG
 from django import forms
 
 from models import Record
@@ -24,7 +25,7 @@ def send_email(address, name, start, end, service):
     attendees = [address]
     organizer = "ORGANIZER;CN=Deemaz:mailto:calendar@deemaz.ru"
     fro = "Deemaz <calendar@deemaz.ru>"
-    deemaz = 'calendar@deemaz.ru'
+    deemaz = 'alexei.eremin@gmail.com' if DEBUG else 'calendar@deemaz.ru'
 
     ddtstart = start
     dur = end - start
@@ -187,4 +188,25 @@ class RecordForm(forms.ModelForm):
         except:
             import traceback
             open('/tmp/axz', 'a').write(traceback.format_exc() + '\n\n\n')
+        return record
+
+
+    def save_no_email(self, *args,**kwargs):
+        record = super(RecordForm, self).save(commit=False, *args, **kwargs)
+        record.updateTime()
+        service = []
+        if record.man_haircut:
+            print record
+            service.append(u'Мужская стрижка')
+        if record.woman_haircut:
+            service.append(u'Женская стрижка')
+        if record.coloring:
+            service.append(u'Окрашивание')
+        if record.haircare:
+            service.append(u'Уход')
+        if record.laminate:
+            service.append(u'Ламинирование')
+        if record.catering:
+            service.append(u'Выезд')
+        calendar_service = u'+'.join(service)
         return record

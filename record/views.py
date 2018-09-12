@@ -48,6 +48,40 @@ def save(request, id=None):
         'record': serialized_record
     }
 
+
+@json
+def resize(request, id=None):
+    if id is not None:
+        if request.user.is_superuser:
+            instance = Record.objects.get(id=id)
+        else:
+            instance = Record.objects.get(id=id, session_id=request.session.session_key)
+        form = RecordForm(request.POST, instance=instance)
+    else:
+        form = RecordForm(request.POST)
+    if not form.is_valid():
+        return {
+            'errors': form.errors
+        }
+    record = form.save_no_email()
+    record.session_id = request.session.session_key
+    try:
+        record.save()
+    except CrossingEntryException, e:
+        return {
+            'error': e.message,
+        }
+    serialized_record = simplejson.loads(json_serializer.serialize([record], ensure_ascii=False))[0]['fields']
+    #serialized_record['start'] = time.mktime(record.start.timetuple())*1000
+    #serialized_record['end'] = time.mktime(record.end.timetuple())*1000
+    serialized_record['start'] = time.strftime("%Y-%m-%dT%H:%M:%S", record.start.timetuple())
+    serialized_record['end'] = time.strftime("%Y-%m-%dT%H:%M:%S", record.end.timetuple())
+    serialized_record['title'] = record.get_title()
+    serialized_record['id'] = record.id
+    return {
+        'record': serialized_record
+    }
+
     
 @json
 def list(request):
